@@ -5,5 +5,17 @@
  * @returns {string} - the new string without extra symbols according passed size
  */
 export function trimSymbols(string, size) {
-
+  return recursion([...string], [...string][0], size).join("");
 }
+function recursion(arr, sym, size) {
+  let i = 0;
+  let count = 0;
+  while (arr[i] === sym) {
+    count++;
+    i++;
+  }
+  if (arr.slice(i).length)
+  {return [...(sym.repeat(count >= size ? size : count))].concat(recursion(arr.slice(i), arr[i], size));}
+  else {return [...(sym.repeat(count >= size ? size : count))];}
+}
+
