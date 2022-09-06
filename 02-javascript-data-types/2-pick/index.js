@@ -5,5 +5,13 @@
  * @returns {object} - returns the new object
  */
 export const pick = (obj, ...fields) => {
-
+  const copyObj = {};
+  for (let [key, value] of Object.entries(obj)) {
+    if (fields.includes(key)) {
+      copyObj[key] = value;
+    }
+  }
+  return copyObj;
 };
+
+//console.log(pick({foo: 'foo', bar: 'bar'}, 'foo', 'bar'));
