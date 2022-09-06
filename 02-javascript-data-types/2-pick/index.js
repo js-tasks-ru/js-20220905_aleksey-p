@@ -14,4 +14,3 @@ export const pick = (obj, ...fields) => {
   return copyObj;
 };
 
-//console.log(pick({foo: 'foo', bar: 'bar'}, 'foo', 'bar'));
