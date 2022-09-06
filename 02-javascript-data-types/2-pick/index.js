@@ -4,13 +4,6 @@
  * @param {...string} fields - the properties paths to pick
  * @returns {object} - returns the new object
  */
-export const pick = (obj, ...fields) => {
-  const copyObj = {};
-  for (let [key, value] of Object.entries(obj)) {
-    if (fields.includes(key)) {
-      copyObj[key] = value;
-    }
-  }
-  return copyObj;
-};
+export const pick = (obj, ...fields) => Object.fromEntries(Object.entries(obj).filter(elem => fields.includes(elem[0])));
+
 
