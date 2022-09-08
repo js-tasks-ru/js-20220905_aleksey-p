@@ -8,6 +8,5 @@ const findValue = (object, pathArr) =>
   (pathArr.length > 0 && object !== undefined) ? findValue(object[pathArr.pop()], pathArr) : object;
 
 export function createGetter(path) {
-  let pathArr = path.split('.').reverse();
-  return (obj) => findValue(obj, pathArr);
+  return obj => findValue(obj, path.split('.').reverse());
 }

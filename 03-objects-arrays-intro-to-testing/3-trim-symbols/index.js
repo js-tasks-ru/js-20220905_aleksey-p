@@ -5,7 +5,9 @@
  * @returns {string} - the new string without extra symbols according passed size
  */
 export function trimSymbols(string, size) {
-  return recursion([...string], [...string][0], size).join("");
+  return string ?
+    recursion([...string], [...string][0], size).join("") :
+    "";
 }
 function recursion(arr, sym, size) {
   let i = 0;
@@ -14,8 +16,9 @@ function recursion(arr, sym, size) {
     count++;
     i++;
   }
-  if (arr.slice(i).length)
-  {return [...(sym.repeat(count >= size ? size : count))].concat(recursion(arr.slice(i), arr[i], size));}
-  else {return [...(sym.repeat(count >= size ? size : count))];}
+  const arrSym = [...(sym.repeat(count >= size ? size : count))];
+  return arr.slice(i).length ?
+    arrSym.concat(recursion(arr.slice(i), arr[i], size)) :
+    arrSym;
 }
 
