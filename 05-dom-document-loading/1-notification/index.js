@@ -9,32 +9,36 @@ export default class NotificationMessage {
     this.message = message;
     this.duration = duration;
     this.type = type;
-
     this.render();
   }
 
-  show(elem = this.element) {
-    elem.innerHTML = this.element.outerHTML;
-    this.element.innerHTML = elem.outerHTML;
-    return elem.outerHTML;
+  get template() {
+    return `
+    <div class="notification ${this.type}">
+       <div style="--value:${this.duration}s">
+          <div class="timer"></div>
+          <div class="inner-wrapper">
+              <div class="notification-header">${this.type}</div>
+              <div class="notification-body">
+                  ${this.message}
+              </div>
+          </div>
+      </div></div>`;
   }
-  render() {
-    this.element = document.createElement('div');
-    this.element.className = `notification ${this.type}`;
-    this.element.innerHTML = `
-     <div style="--value:${this.duration}s">
-        <div class="timer"></div>
-        <div class="inner-wrapper">
-            <div class="notification-header">success</div>
-            <div class="notification-body">
-                ${this.message}
-            </div>
-        </div>
-    </div>`;
+  show(elem = document.createElement('div')) {
+    elem.innerHTML = this.template;
+    this.element = elem.firstElementChild;
+    setTimeout(() => this.remove(), this.element.duration);
 
   }
+  render() {
+    this.show();
+  }
   remove() {
-    this.element.remove();
+    if (this.element)
+    {
+      this.element.remove();
+    }
   }
   destroy() {
     this.remove();
