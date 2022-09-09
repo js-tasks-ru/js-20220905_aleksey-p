@@ -1,8 +1,12 @@
 /**
  * createGetter - creates function getter which allows select value from object
- * @param {string} path - the strings path separated by dot
  * @returns {function} - function-getter which allow get value from object by set path
+ * @param object
+ * @param pathArr
  */
-export function createGetter(path) {
+const findValue = (object, pathArr) =>
+  (pathArr.length > 0 && object !== undefined) ? findValue(object[pathArr.pop()], pathArr) : object;
 
+export function createGetter(path) {
+  return obj => findValue(obj, path.split('.').reverse());
 }
