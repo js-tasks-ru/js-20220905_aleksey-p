@@ -3,10 +3,14 @@
  * @returns {function} - function-getter which allow get value from object by set path
  * @param object
  * @param pathArr
+ * @param i
  */
-const findValue = (object, pathArr) =>
-  (pathArr.length > 0 && object !== undefined) ? findValue(object[pathArr.pop()], pathArr) : object;
+const findValue = (object, pathArr, i = 0) =>
+  (pathArr.length > i && object !== undefined) ?
+    findValue(object[pathArr[i]], pathArr, ++i) :
+    object;
 
 export function createGetter(path) {
-  return obj => findValue(obj, path.split('.').reverse());
+  const pathArr = path.split('.');
+  return obj => findValue(obj, pathArr);
 }
