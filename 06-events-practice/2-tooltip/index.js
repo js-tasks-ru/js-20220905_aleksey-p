@@ -11,18 +11,19 @@ class Tooltip {
   }
 
   tooltipPosition = event => {
-    const w = event.width;
-    const h = event.height;
-    Tooltip.#onlyInstance.element.style.left = w + 'px';
-    Tooltip.#onlyInstance.element.style.left = h + 'px';
 
+    const x = event.clientX;
+    const y = event.clientY;
+
+    this.element.style.left = (x + 10) + 'px';
+    this.element.style.top = (y + 10) + 'px';
   }
 
   showTooltip = event => {
     const {target} = event;
     const tooltipText = target.dataset.tooltip;
     if (tooltipText) {
-      this.render();
+      this.render(tooltipText);
       document.body.addEventListener('pointermove', this.tooltipPosition);
     }
   }
@@ -43,50 +44,15 @@ class Tooltip {
     this.element.innerHTML = tooltipText;
     document.body.append(this.element);
   }
+
+  remove() {
+    document.body.removeEventListener('pointerover', this.showTooltip);
+    document.body.removeEventListener('pointerout', this.hideTooltip);
+    this.hideTooltip();
+  }
+  destroy() {
+    this.remove();
+  }
 }
 
 export default Tooltip;
-
-// class Tooltip {
-//   static #onlyInstance = null;
-//   constructor(parent = document.body) {
-//     if (!Tooltip.#onlyInstance) {
-//       Tooltip.#onlyInstance = this;
-//     } else {
-//       return Tooltip.#onlyInstance;
-//     }
-//     this.parent = parent;
-//   }
-//   initialize() {
-//     this.parent.addEventListener('pointerover', this.showTooltip)
-//     this.parent.addEventListener('pointerout', this.removeTooltip)
-//   }
-//   render(message) {
-//     this.element = document.createElement('div');
-//     this.element.className = 'tooltip';
-//     this.element.innerHTML = message;
-//     this.parent.append(this.element);
-//   }
-//   showTooltip = (event) => {
-//     const target = event.target;
-//     let message = target.dataset.tooltip;
-//     this.render(message);
-//     this.element.style.left = event.pageX + 'px';
-//     this.element.style.top = event.pageY + 'px';
-//
-//   }
-//   removeTooltip = () => {
-//     this.element.remove();
-//   }
-//   remove() {
-//     this.parent.removeEventListener('pointerover', this.showTooltip);
-//     this.parent.removeEventListener('pointerout', this.removeTooltip);
-//     this.removeTooltip()
-//   }
-//   destroy() {
-//     this.remove();
-//   }
-//
-// }
-//
-// export default Tooltip;
