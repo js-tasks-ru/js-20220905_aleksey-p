@@ -141,11 +141,11 @@ export default class SortableTable {
     const {header} = this.subElements;
     const [...sortableCellsArr] = header.querySelectorAll(`[data-sortable='true']`);
     sortableCellsArr.map(cell => {
-      cell.addEventListener('click', () => {
+      cell.addEventListener('pointerdown', () => {
         this.sorted.id = cell.dataset.id;
-        if (cell.dataset.order === "" || cell.dataset.order === "desc") {
+        if (cell.dataset.order === "desc") {
           this.sorted.order = "asc";
-        } else if ( cell.dataset.order === "asc") {
+        } else if (cell.dataset.order === "" || cell.dataset.order === "asc") {
           this.sorted.order = "desc";
         } else {
           reportError("undefined cell.dataset.order");
