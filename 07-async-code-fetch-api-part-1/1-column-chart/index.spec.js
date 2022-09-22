@@ -30,9 +30,10 @@ describe('async-code-fetch-api-part-1/column-chart', () => {
   it('should load data correctly', async () => {
     const from = new Date();
     const to = new Date();
-    const data = await columnChart.update(from, to);
+    await columnChart.update(from, to);
+    const data = columnChart.data;
 
-    expect(data).toEqual(ordersData);
+      expect(data).toEqual(ordersData);
   });
 
   it('should render loaded data correctly', async () => {
@@ -80,6 +81,7 @@ describe('async-code-fetch-api-part-1/column-chart', () => {
       "2020-04-12": 13,
       "2020-04-13": 20
     };
+
 
     fetchMock.once(JSON.stringify(data));
 
