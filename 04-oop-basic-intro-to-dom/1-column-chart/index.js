@@ -12,8 +12,7 @@ export default class ColumnChart {
     this.data = data;
     this.label = label;
     this.link = link;
-    this.value = value;
-    this.formatHeading = formatHeading(this.value);
+    this.value = formatHeading(value);
 
     this.render();
   }
@@ -33,7 +32,7 @@ export default class ColumnChart {
               ${this.link ? `<a href="${this.link}" rel="stylesheet"  class="column-chart__link">View all</a>` : ""}
             </div>
             <div class="column-chart__container">
-              <div data-element="header" class="column-chart__header">${this.formatHeading !== "" + this.value ? this.formatHeading : this.value}</div>
+              <div data-element="header" class="column-chart__header">${this.value}</div>
               <div data-element="body" class="column-chart__chart">
               ${this.data.length ? this.chartMaker() : ''}
               </div>
