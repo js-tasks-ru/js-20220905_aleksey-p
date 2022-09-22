@@ -44,7 +44,7 @@ export default class SortableTable {
         if (sortType === "string") {
           return direction * firstElem[id].localeCompare(secondElem[id], ['ru', 'eng'], {caseFirst: "upper"});
         }
-        return reportError("undefined sortType");
+        return console.error("wrong sortType");
       });
     }
 
@@ -54,8 +54,7 @@ export default class SortableTable {
     setHeaderOrder(this.sorted);
 
     this.data = sortData(this.sorted, sortType, this.data);
-    this.subElements.body.innerHTML = this.body;
-    this.subElements.body = this.subElements.body.firstElementChild;
+    this.subElements.body.innerHTML = this.body.firstElementChild;
   }
 
   sortOnServer() {
@@ -64,7 +63,7 @@ export default class SortableTable {
 
   get allSubElements() {
     const elementsArr = this.element.querySelectorAll('[data-element]');
-    let elementsObj = {};
+    const elementsObj = {};
 
     for (let subElem of elementsArr) {
       elementsObj[subElem.dataset.element] = subElem;
@@ -148,7 +147,7 @@ export default class SortableTable {
         } else if (cell.dataset.order === "" || cell.dataset.order === "asc") {
           this.sorted.order = "desc";
         } else {
-          reportError("undefined cell.dataset.order");
+          reportError("wrong cell.dataset.order");
         }
         this.sort();
       });
