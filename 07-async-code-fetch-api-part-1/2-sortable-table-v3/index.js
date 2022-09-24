@@ -1,10 +1,16 @@
 const BACKEND_URL = 'https://course-js.javascript.ru';
 
 export default class SortableTable {
+
+  //region def
   data = {};
+  dataLength = 0;
   element;
   subElements = {};
   isSortLocally = false;
+  step = 30;
+  currentStep = 0;
+  isDataLoading = false;
 
   constructor(headersConfig, {
     url = '',
@@ -17,9 +23,10 @@ export default class SortableTable {
     this.render();
   }
 
+
   get template() {
     return `<div data-element="productsContainer" class="products-list__container">
-      <div class="sortable-table">
+      <div data-element="table" class="sortable-table">
 
         <div data-element="header" class="sortable-table__header sortable-table__row"></div>
 
@@ -42,6 +49,7 @@ export default class SortableTable {
     const elements = element.querySelectorAll('[data-element]');
     [...elements].map(item => this.subElements[item.dataset.element] = item);
   }
+  //endregion
 
   //region header
   getHeader(header) {
@@ -61,7 +69,7 @@ export default class SortableTable {
   //endregion
 
   //region body
-  getBody(body) {
+  async getBody(body) {
     body.innerHTML = this.data.map(object => this.setRow(object)).join("");
   }
 
@@ -81,17 +89,26 @@ export default class SortableTable {
   }
   //endregion
 
-  render() {
+  async render() {
     this.element = document.createElement('div');
     this.element.innerHTML = this.template;
     this.element = this.element.firstElementChild;
 
     this.getSubElements(this.element);
     this.getHeader(this.subElements.header);
+    try {
+      const query = `${BACKEND_URL}/${this.url}`;
+      const sort = `?_sort=${this.sorted.id}&_order=${this.sorted.order}`;
+      const response = await fetch(query + sort);
+      this.dataLength = [...await response.json()].length;
+    } catch (e) {
+      throw new Error(e);
+    }
     this.sort();
 
   }
 
+  //region sort
   sort() {
     this.sortHeader();
     if (this.isSortLocally) {
@@ -135,18 +152,46 @@ export default class SortableTable {
   }
 
   async sortOnServer () {
-    this.isSortLocally = true;
-    try {
-      const response = await fetch(`${BACKEND_URL}/${this.url}?_sort=${this.sorted.id}&_order=${this.sorted.order}`);
-      this.data = await response.json();
-      this.getBody(this.subElements.body);
-    } catch (e) {
-      throw new Error(e);
+    const query = `${BACKEND_URL}/${this.url}`;
+    const sort = `?_sort=${this.sorted.id}&_order=${this.sorted.order}`;
+    const range = `&_start=${this.currentStep}&_end=${this.currentStep + this.step}`;
+
+
+    if (!this.serverIsEmpty) {
+      this.subElements.table.classList.add('sortable-table_loading');
+      this.isDataLoading = true;
+
+      try {
+
+        const response = await fetch(query + sort + range);
+        const newData = await response.json();
+
+        if (newData.length < this.step) {
+          this.serverIsEmpty = true;
+        }
+
+        this.isDataLoading = false;
+        this.subElements.table.classList.remove('sortable-table_loading');
+
+        if (!newData.length) {
+          this.subElements.table.classList.add('sortable-table_empty');
+        }
+
+        this.data = this.currentStep > 0 ? [...this.data, ...newData] : newData;
+        if (this.data.length === this.dataLength) {this.isSortLocally = true;}
+        this.currentStep += this.step;
+        await this.getBody(this.subElements.body);
+      } catch (e) {
+        throw new Error(e);
+      }
     }
   }
+  //endregion
 
+  //region events
   initializeEventListeners() {
     this.subElements.header.addEventListener('pointerdown', this.onColumnClick);
+    document.addEventListener('scroll', this.scrollingDataLoading);
   }
 
   onColumnClick = event => {
@@ -155,10 +200,17 @@ export default class SortableTable {
     }
 
     const target = findTarget(event.target);
+    this.setSorted(target);
+    this.currentStep = 0;
+    this.sort();
+  }
+
+  setSorted(target) {
     const columns = this.subElements.header.querySelectorAll('[data-id]');
     if (![...columns].includes(target) || target.dataset.sortable === "false") {return;}
 
     this.sorted.id = target.dataset.id;
+
     if (target.dataset.order === "desc") {
       this.sorted.order = "asc";
     } else if (target.dataset.order === "" || target.dataset.order === "asc") {
@@ -166,11 +218,25 @@ export default class SortableTable {
     } else {
       throw new Error("wrong order type");
     }
-    this.sort();
   }
+
+  scrollingDataLoading = () => {
+    const clientHeight = document.documentElement.clientHeight;
+    const bottom = Math.floor(document.documentElement.getBoundingClientRect().bottom);
+    if (!this.isDataLoading && bottom <= clientHeight + 100) {
+      try {
+        this.sortOnServer();
+      }
+      catch (e) {
+        throw new Error(e);
+      }
+    }
+  }
+  //endregion
 
   remove() {
     this.element.remove();
+    document.removeEventListener('scroll', this.scrollingDataLoading);
   }
 
   destroy() {
