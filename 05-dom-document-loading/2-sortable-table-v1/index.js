@@ -33,7 +33,7 @@ export default class SortableTable {
     this.element.firstElementChild.lastElementChild.innerHTML = this.setRows(sortedData, this.headerConfig);
     this.subElements.body.innerHTML = this.setRows(sortedData, this.headerConfig);
   }
-  setRows(data = [], cfg = []) {
+  setRows(data = [], config = []) {
 
     function setCells(rowData = {}, cfg = []) {
       return cfg.map(elem => elem.template ?
@@ -43,13 +43,13 @@ export default class SortableTable {
 
     return data.map(rowData => `
         <a href="/products/${rowData.id}" class="sortable-table__row">
-            ${setCells(rowData, cfg)}
+            ${setCells(rowData, config)}
         </a>`)
         .join("\n");
   }
 
-  setHeader = (cfg = []) =>
-    cfg.map(elem =>
+  setHeader(config = []) {
+    return config.map(elem =>
       `<div class="sortable-table__cell"
         data-id="${elem.id}"
         data-sortable="${elem.sortable}"
@@ -59,7 +59,8 @@ export default class SortableTable {
           <span class="sort-arrow"></span>
         </span>
       </div>`)
-    .join("\n");
+      .join("\n");
+  }
 
   get template() {
     return `
