@@ -37,7 +37,9 @@ export default class ColumnChart {
 
   getSubElements() {
     const elements = this.element.querySelectorAll('[data-element]');
-    [...elements].map(item => this.subElements[item.dataset.element] = item);
+    for (let item of elements) {
+      this.subElements[item.dataset.element] = item;
+    }
   }
 
   render() {
@@ -88,11 +90,10 @@ export default class ColumnChart {
   }
 
   setTitle() {
-    let inner = `Total ${this.label}`;
-    if (this.link) {
-      inner += `<a class="column-chart__link" href="./${this.label}">View all</a>`;
-    }
-    this.subElements.title.innerHTML = inner;
+    const label = `Total ${this.label}`;
+    const link = this.link ? `<a class="column-chart__link" href="./${this.label}">View all</a>` : '';
+
+    this.subElements.title.innerHTML = `${label}${link}`;
   }
 
   setHeader() {
