@@ -107,7 +107,6 @@ export default class SortableList {
     this.setPosition(event);
     this.updatePlaceholder();
   }
-
   updatePlaceholder() {
 
     const previousItem = this.itemPlaceholder.previousElementSibling;
