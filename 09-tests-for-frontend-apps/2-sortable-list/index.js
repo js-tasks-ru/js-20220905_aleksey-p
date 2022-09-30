@@ -3,25 +3,12 @@ export default class SortableList {
   draggingItem;
   shifts = {};
   subElements = {};
-  itemIndex = 0;
   itemPlaceholder;
 
   constructor({ items = [] } = {}) {
 
     this.items = items;
     this.render();
-  }
-
-  stylizeItems() {
-    this.items.map(item => item.classList.add("sortable-list__item"));
-  }
-
-  getSubElements() {
-    const subElements = this.element.querySelectorAll('[data-element]');
-
-    for (const subElement of subElements) {
-      this.subElements[subElement.dataset.element] = subElement;
-    }
   }
 
   render() {
@@ -36,11 +23,32 @@ export default class SortableList {
     this.initialize();
   }
 
-  initialize() {
-    this.element.addEventListener('pointerdown', this.onElementClick);
+  // region render common functions
+  setPlaceholder() {
+    this.itemPlaceholder = document.createElement("li");
+    this.itemPlaceholder.className = "sortable-list__item sortable-list__placeholder";
+    this.itemPlaceholder.style.backgroundColor = "transparent";
   }
 
-  onElementClick = event => {
+  getSubElements() {
+    const subElements = this.element.querySelectorAll('[data-element]');
+
+    for (const subElement of subElements) {
+      this.subElements[subElement.dataset.element] = subElement;
+    }
+  }
+
+  stylizeItems() {
+    this.items.map(item => item.classList.add("sortable-list__item"));
+  }
+
+  //endregion
+
+  initialize() {
+    this.element.addEventListener('pointerdown', this.onPointerDown);
+  }
+
+  onPointerDown = event => {
     const target = event.target;
     const listItem = target.closest(".sortable-list__item");
 
@@ -55,27 +63,38 @@ export default class SortableList {
     }
   }
 
+  onPointerMove = event => {
+    this.subElements.currentElement.append(this.draggingItem);
+    this.setPosition(event);
+    this.updatePlaceholder();
+  }
+
+  onPointerUp = () => {
+    this.subElements.list.insertBefore(this.draggingItem, this.itemPlaceholder);
+
+    this.setDefaultStyle();
+    this.draggingItem = null;
+    this.itemPlaceholder.remove();
+
+    document.removeEventListener('pointermove', this.onPointerMove);
+    document.removeEventListener('pointerup', this.onPointerUp);
+  }
+
+  // region onPointerDown common function
   dragItem(listItem, event) {
     this.draggingItem = listItem;
-    this.itemIndex = [...this.subElements.list.children].indexOf(this.draggingItem);
 
     this.setDraggingClass();
     this.setShifts(event);
     this.setPosition(event);
 
-    this.insertPlaceholder(this.itemIndex);
+    this.subElements.list.insertBefore(this.itemPlaceholder, this.draggingItem);
 
     document.addEventListener('pointermove', this.onPointerMove);
     document.addEventListener('pointerup', this.onPointerUp);
   }
 
-  //region dragItem functions
-  setPlaceholder() {
-    this.itemPlaceholder = document.createElement("li");
-    this.itemPlaceholder.className = "sortable-list__item sortable-list__placeholder";
-    this.itemPlaceholder.style.backgroundColor = "transparent";
-  }
-
+  //region dragItem common functions
   setDraggingClass() {
     this.draggingItem.style.width = this.draggingItem.offsetWidth + 'px';
     this.draggingItem.style.height = this.draggingItem.offsetHeight + 'px';
@@ -92,23 +111,10 @@ export default class SortableList {
   }
   //endregion
 
-  setPosition({pageX, pageY}) {
-    this.draggingItem.style.left = pageX - this.shifts.x + 'px';
-    this.draggingItem.style.top = pageY - this.shifts.y + 'px';
-  }
+  //endregion
 
-  insertPlaceholder(index) {
-    const currentElement = this.subElements.list.children[index];
-    this.subElements.list.insertBefore(this.itemPlaceholder, currentElement);
-  }
-
-  onPointerMove = event => {
-    this.subElements.currentElement.append(this.draggingItem);
-    this.setPosition(event);
-    this.updatePlaceholder();
-  }
+  // region onPointerMove common function
   updatePlaceholder() {
-
     const previousItem = this.itemPlaceholder.previousElementSibling;
     const nextItem = this.itemPlaceholder.nextElementSibling;
 
@@ -125,22 +131,36 @@ export default class SortableList {
       this.subElements.list.insertBefore(this.itemPlaceholder, nextItem.nextElementSibling);
     }
   }
+  // endregion
 
-  onPointerUp = () => {
-
-    this.subElements.list.insertBefore(this.draggingItem, this.itemPlaceholder);
-    this.setDefaultStyle();
-    this.itemPlaceholder.remove();
-
-    document.removeEventListener('pointermove', this.onPointerMove);
-    document.removeEventListener('pointerup', this.onPointerUp);
-  }
-
+  // region onPointerUp common function
   setDefaultStyle() {
     this.draggingItem.style.left = '';
     this.draggingItem.style.top = '';
     this.draggingItem.style.width = '';
     this.draggingItem.style.height = '';
     this.draggingItem.classList.remove('sortable-list__item_dragging');
+  }
+  // endregion
+
+  setPosition({pageX, pageY}) {
+    this.draggingItem.style.left = pageX - this.shifts.x + 'px';
+    this.draggingItem.style.top = pageY - this.shifts.y + 'px';
+  }
+
+  remove() {
+    this.element.remove();
+
+  }
+
+  destroy() {
+    this.remove();
+
+    this.element = null;
+    this.draggingItem = null;
+    this.shifts = {};
+    this.subElements = {};
+    this.itemPlaceholder = null;
+    this.items = [];
   }
 }
