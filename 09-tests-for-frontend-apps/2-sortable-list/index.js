@@ -2,8 +2,9 @@ export default class SortableList {
   element;
   draggingItem;
   shifts = {};
+  subElements = {};
   itemIndex = 0;
-  itemPlaceholder = document.createElement("li");
+  itemPlaceholder;
 
   constructor({ items = [] } = {}) {
 
@@ -15,13 +16,23 @@ export default class SortableList {
     this.items.map(item => item.classList.add("sortable-list__item"));
   }
 
+  getSubElements() {
+    const subElements = this.element.querySelectorAll('[data-element]');
+
+    for (const subElement of subElements) {
+      this.subElements[subElement.dataset.element] = subElement;
+    }
+  }
+
   render() {
-    const wrapper = document.createElement('ul');
-    this.stylizeItems();
-    wrapper.append(...this.items);
-
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = "<ul data-element='list'></ul><ul data-element='currentElement'></ul>";
     this.element = wrapper;
+    this.setPlaceholder();
+    this.getSubElements();
 
+    this.stylizeItems();
+    this.subElements.list.append(...this.items);
     this.initialize();
   }
 
@@ -46,9 +57,7 @@ export default class SortableList {
 
   dragItem(listItem, event) {
     this.draggingItem = listItem;
-    this.itemIndex = [...this.element.children].indexOf(this.draggingItem);
-
-    this.setPlaceholder();
+    this.itemIndex = [...this.subElements.list.children].indexOf(this.draggingItem);
 
     this.setDraggingClass();
     this.setShifts(event);
@@ -62,6 +71,7 @@ export default class SortableList {
 
   //region dragItem functions
   setPlaceholder() {
+    this.itemPlaceholder = document.createElement("li");
     this.itemPlaceholder.className = "sortable-list__item sortable-list__placeholder";
     this.itemPlaceholder.style.backgroundColor = "transparent";
   }
@@ -82,68 +92,44 @@ export default class SortableList {
   }
   //endregion
 
-  setPosition({clientX, clientY}) {
-    this.draggingItem.style.left = clientX - this.shifts.x + 'px';
-    this.draggingItem.style.top = clientY - this.shifts.y + 'px';
+  setPosition({pageX, pageY}) {
+    this.draggingItem.style.left = pageX - this.shifts.x + 'px';
+    this.draggingItem.style.top = pageY - this.shifts.y + 'px';
   }
 
   insertPlaceholder(index) {
-    const currentElement = this.element.children[index];
-    if (currentElement !== this.itemPlaceholder) {
-      this.element.insertBefore(this.itemPlaceholder, currentElement);
-    }
+    const currentElement = this.subElements.list.children[index];
+    this.subElements.list.insertBefore(this.itemPlaceholder, currentElement);
   }
 
   onPointerMove = event => {
+    this.subElements.currentElement.append(this.draggingItem);
     this.setPosition(event);
     this.updatePlaceholder();
   }
 
   updatePlaceholder() {
-    const items = [...this.element.children];
+
     const previousItem = this.itemPlaceholder.previousElementSibling;
     const nextItem = this.itemPlaceholder.nextElementSibling;
 
-    const {top: previousTop} = previousItem.getBoundingClientRect();
-    const {bottom: nextBottom} = nextItem.getBoundingClientRect();
+    const previousTop = previousItem?.getBoundingClientRect().top;
+    const nextBottom = nextItem?.getBoundingClientRect().bottom;
 
     const {top: itemTop, bottom: itemBottom} = this.draggingItem.getBoundingClientRect();
 
+    if (itemTop <= previousTop) {
+      this.subElements.list.insertBefore(this.itemPlaceholder, previousItem);
+    }
 
-
-
-    // const {top: itemTop, bottom: itemBottom} = this.draggingItem.getBoundingClientRect();
-    // const {top: listTop, bottom: listBottom} = this.element.getBoundingClientRect();
-    //
-    //
-    // if (itemTop <= listTop) {
-    //   const firstIndex = [...this.element.children].indexOf(this.element.firstElementChild);
-    //   this.insertPlaceholder(firstIndex);
-    // }
-    //
-    // if (itemBottom >= listBottom) {
-    //   const lastIndex = items.indexOf(this.element.lastElementChild);
-    //   this.insertPlaceholder(lastIndex + 1);
-    // }
-    //
-    // const {top: previousItemTop} = items[previousIndex].getBoundingClientRect();
-    // const {top: nextItemTop} = items[nextIndex].getBoundingClientRect();
-    //
-    // if (itemTop <= previousItemTop) {
-    //   if (items[previousIndex] === this.draggingItem) {return;}
-    //   this.insertPlaceholder([...this.element.children].indexOf(this.itemPlaceholder) - 1);
-    //   console.log(itemTop, previousItemTop);
-    // }
-    //
-    // if (itemTop <= nextItemTop) {
-    //   if (items[nextIndex] === this.draggingItem) {return;}
-    //   this.insertPlaceholder(nextIndex);
-    // }
+    if (itemBottom >= nextBottom) {
+      this.subElements.list.insertBefore(this.itemPlaceholder, nextItem.nextElementSibling);
+    }
   }
 
   onPointerUp = () => {
 
-    this.element.insertBefore(this.draggingItem, this.itemPlaceholder, this.element);
+    this.subElements.list.insertBefore(this.draggingItem, this.itemPlaceholder);
     this.setDefaultStyle();
     this.itemPlaceholder.remove();
 
