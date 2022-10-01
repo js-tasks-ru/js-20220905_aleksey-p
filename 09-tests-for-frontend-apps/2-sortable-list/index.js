@@ -1,4 +1,8 @@
 export default class SortableList {
+
+  // TODO: записал вопросы в TODO
+
+  //region default
   element;
   draggingItem;
   shifts = {};
@@ -10,10 +14,13 @@ export default class SortableList {
     this.items = items;
     this.render();
   }
+  //endregion
+
 
   render() {
     const wrapper = document.createElement('div');
-    wrapper.innerHTML = "<ul data-element='list'></ul><ul data-element='currentElement'></ul>";
+    wrapper.dataset.element = "imageListContainer";
+    wrapper.innerHTML = "<ul data-element='list' style='padding: 0'></ul><ul data-element='currentElement'></ul>";
     this.element = wrapper;
     this.setPlaceholder();
     this.getSubElements();
@@ -39,16 +46,23 @@ export default class SortableList {
   }
 
   stylizeItems() {
-    this.items.map(item => item.classList.add("sortable-list__item"));
+    this.items.map(item => {
+      item.classList.add("sortable-list__item");
+      item.classList.add("products-edit__imagelist-item");
+    });
+
   }
 
   //endregion
+
 
   initialize() {
     this.element.addEventListener('pointerdown', this.onPointerDown);
   }
 
   onPointerDown = event => {
+    event.preventDefault();
+
     const target = event.target;
     const listItem = target.closest(".sortable-list__item");
 
@@ -56,6 +70,7 @@ export default class SortableList {
 
     if (target.closest("[data-grab-handle]")) {
       this.dragItem(listItem, event);
+      this.setShifts(event);
     }
 
     if (target.closest("[data-delete-handle]")) {
@@ -64,7 +79,10 @@ export default class SortableList {
   }
 
   onPointerMove = event => {
+    event.preventDefault();
+
     this.subElements.currentElement.append(this.draggingItem);
+
     this.setPosition(event);
     this.updatePlaceholder();
   }
@@ -80,12 +98,12 @@ export default class SortableList {
     document.removeEventListener('pointerup', this.onPointerUp);
   }
 
+
   // region onPointerDown common function
   dragItem(listItem, event) {
     this.draggingItem = listItem;
 
     this.setDraggingClass();
-    this.setShifts(event);
     this.setPosition(event);
 
     this.subElements.list.insertBefore(this.itemPlaceholder, this.draggingItem);
@@ -102,11 +120,9 @@ export default class SortableList {
   }
 
   setShifts({clientX, clientY}) {
-    const itemRect = this.draggingItem.getBoundingClientRect();
-
     this.shifts = {
-      x: clientX - itemRect.x,
-      y: clientY - itemRect.y
+      x: clientX - this.draggingItem.getBoundingClientRect().x,
+      y: clientY - this.draggingItem.getBoundingClientRect().y
     };
   }
   //endregion
@@ -118,16 +134,11 @@ export default class SortableList {
     const previousItem = this.itemPlaceholder.previousElementSibling;
     const nextItem = this.itemPlaceholder.nextElementSibling;
 
-    const previousTop = previousItem?.getBoundingClientRect().top;
-    const nextBottom = nextItem?.getBoundingClientRect().bottom;
-
-    const {top: itemTop, bottom: itemBottom} = this.draggingItem.getBoundingClientRect();
-
-    if (itemTop <= previousTop) {
+    if (this.draggingItem.getBoundingClientRect().top <= previousItem?.getBoundingClientRect().top) {
       this.subElements.list.insertBefore(this.itemPlaceholder, previousItem);
     }
 
-    if (itemBottom >= nextBottom) {
+    if (this.draggingItem.getBoundingClientRect().bottom >= nextItem?.getBoundingClientRect().bottom) {
       this.subElements.list.insertBefore(this.itemPlaceholder, nextItem.nextElementSibling);
     }
   }
@@ -139,14 +150,22 @@ export default class SortableList {
     this.draggingItem.style.top = '';
     this.draggingItem.style.width = '';
     this.draggingItem.style.height = '';
+    this.draggingItem.style.position = "";
     this.draggingItem.classList.remove('sortable-list__item_dragging');
   }
   // endregion
 
-  setPosition({pageX, pageY}) {
-    this.draggingItem.style.left = pageX - this.shifts.x + 'px';
-    this.draggingItem.style.top = pageY - this.shifts.y + 'px';
+
+  setPosition({clientX, clientY}) {
+
+    //TODO: не пойму причину проблемы - если вместо 20 и 30 поставить шифты,
+    // которые в данный момент равны 20 и 30, то они станут -20 и -30. Ошибка возникает в productFormv2
+    console.log(this.shifts.y);
+    this.draggingItem.style.position = "fixed";
+    this.draggingItem.style.left = clientX - 20 + 'px';
+    this.draggingItem.style.top = clientY - 30 + 'px';
   }
+
 
   remove() {
     this.element.remove();
@@ -163,4 +182,5 @@ export default class SortableList {
     this.itemPlaceholder = null;
     this.items = [];
   }
+
 }
