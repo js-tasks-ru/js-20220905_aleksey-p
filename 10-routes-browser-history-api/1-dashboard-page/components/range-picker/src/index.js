@@ -162,8 +162,11 @@ export default class RangePicker {
 
     date.setDate(1);
 
-    // text-transform: capitalize
-    const monthStr = date.toLocaleString('ru', {month: 'long'});
+    // text-transform: capitalize PASSED
+    const monthStr = date.toLocaleString('ru', {month: 'long'})
+    .replace(/[а-я]/, (w) => w.toUpperCase());
+
+
 
     let table = `<div class="rangepicker__calendar">
       <div class="rangepicker__month-indicator">
