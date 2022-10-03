@@ -3,6 +3,7 @@ export default class RangePicker {
   element;
   subElements = {};
   firstSelect;
+  locale = 'RU-ru';
 
   constructor({
     from = new Date(),
@@ -30,7 +31,7 @@ export default class RangePicker {
   getSubElements(element) {
     const subElements = element.querySelectorAll('[data-element]');
 
-    for (let subElement of subElements) {
+    for (const subElement of subElements) {
       this.subElements[subElement.dataset.element] = subElement;
     }
   }
@@ -65,8 +66,9 @@ export default class RangePicker {
   }
 
   getCalendar(date) {
-    const month = RangePicker.getStringMonth(date.getMonth());
-    const shortDaysOfWeek = RangePicker.getShortDaysOfWeek();
+    const month = RangePicker.getStringMonth(date, this.locale);
+
+    const shortDaysOfWeek = RangePicker.getShortDaysOfWeek(this.locale);
     const dateGrid = this.getDateGrid(date);
 
     return `<div class="rangepicker__calendar">
@@ -82,15 +84,21 @@ export default class RangePicker {
             </div>`;
   }
 
-  static getStringMonth(monthIndex) {
-    const months = ['January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'];
-
-    return months[monthIndex];
+  static getStringMonth(date, locale) {
+    const month = date.toLocaleDateString(locale, {month: "long"});
+    return month[0].toUpperCase() + month.slice(1);
   }
 
-  static getShortDaysOfWeek() {
-    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  static getShortDaysOfWeek(locale) {
+    const date = new Date(2022, 8, 1);
+    const days = [];
+
+    for (let dayIndex = 5; dayIndex <= 11; dayIndex++) {
+      date.setDate(dayIndex);
+      const day = date.toLocaleDateString(locale, {weekday: "short" }) ;
+      days.push(day[0].toUpperCase() + day.slice(1));
+    }
+
     return days.map(item => `<div>${item}</div>`).join('');
   }
 
@@ -150,8 +158,6 @@ export default class RangePicker {
     }
 
   }
-
-
 
   cleardateGrid(calendar) {
     const buttons = calendar.querySelectorAll('[data-value]');

@@ -39,7 +39,8 @@ export default class ColumnChart {
   }
 
   getHeaderValue(data) {
-    return this.formatHeading(Object.values(data).reduce((accum, item) => (accum + item), 0));
+    const sum = Object.values(data).reduce((accum, item) => (accum + item), 0);
+    return this.formatHeading(new Intl.NumberFormat("en-US").format(sum));
   }
 
   async loadData(from, to) {
