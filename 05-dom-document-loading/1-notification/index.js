@@ -26,6 +26,7 @@ export default class NotificationMessage {
           </div>
     </div>`;
   }
+
   show(elem = document.createElement('div')) {
     if (NotificationMessage.element) {
       NotificationMessage.element.remove();
