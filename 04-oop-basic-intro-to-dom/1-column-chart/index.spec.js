@@ -49,7 +49,7 @@ describe('oop-basic-intro-to-dom/column-chart', () => {
   it('should have property "chartHeight"', () => {
     columnChart = new ColumnChart();
 
-    expect(columnChart.chartHeight).toEqual(50);
+    expect(columnChart.CHART_HEIGHT).toEqual(50);
   });
 
   it('should have ability to define total value', () => {

@@ -170,9 +170,6 @@ export default class SortableTable {
           this.serverIsEmpty = true;
         }
 
-        this.isDataLoading = false;
-        table.classList.remove("sortable-table_loading");
-
         if (!newData.length) {
           table.classList.add("sortable-table_empty");
         }
@@ -180,6 +177,9 @@ export default class SortableTable {
         this.data = this.currentStep > 0 ? [...this.data, ...newData] : newData;
         if (this.data.length === this.dataLength) {this.isSortLocally = true;}
         this.currentStep += this.step;
+
+        this.isDataLoading = false;
+        table.classList.remove("sortable-table_loading");
 
         this.getBody();
       })
