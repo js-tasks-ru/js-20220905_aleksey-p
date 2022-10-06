@@ -4,8 +4,6 @@ import fetchJson from './utils/fetch-json.js';
 const IMGUR_CLIENT_ID = '28aaa2e823b03b1';
 const BACKEND_URL = 'https://course-js.javascript.ru';
 
-// TODO: записал вопросы в TODO
-
 // subElements:
 //    productForm,
 //    title,
@@ -23,7 +21,9 @@ export default class ProductForm {
 
   //region default
   element;
-  subElements = {};
+  subElements = {
+    elements: {},
+    inputs: {}};
   customEvent;
 
   dataProduct = [];
@@ -47,6 +47,19 @@ export default class ProductForm {
   }
 
   //region render common functions
+  getSubElements(element) {
+
+    const elements = element.querySelectorAll('[data-element]');
+    for (const subElement of elements) {
+      this.subElements.elements[subElement.dataset.element] = subElement;
+    }
+
+    const inputs = element.querySelectorAll('[name]');
+    for (const input of inputs) {
+      this.subElements.inputs[input.name] = input;
+    }
+  }
+
   getProductCategories() {
 
     const url = new URL("api/rest/categories", BACKEND_URL);
@@ -56,7 +69,7 @@ export default class ProductForm {
     fetchJson(url.href)
       .then(result => {
         this.dataCategories = [...result];
-        const {subcategory: subcategories} = this.subElements;
+        const {subcategory: subcategories} = this.subElements.inputs;
 
         subcategories.innerHTML = this.dataCategories.map(category =>
           category.subcategories.map(subcategory =>
@@ -67,18 +80,6 @@ export default class ProductForm {
 
           ).join('')).join('');
       });
-  }
-
-  getSubElements(element) {
-    const elements = element.querySelectorAll('[data-element]');
-    for (const subElement of elements) {
-      this.subElements[subElement.dataset.element] = subElement;
-    }
-
-    const inputs = element.querySelectorAll('[name]');
-    for (const input of inputs) {
-      this.subElements[input.name] = input;
-    }
   }
 
   get template() {
@@ -97,6 +98,7 @@ export default class ProductForm {
         </div>
         <div class="form-group form-group__wide" data-element="sortableListContainer">
           <label class="form-label">Фото</label>
+          <div data-element="imageListContainer"></div>
           <button type="button" name="uploadImage" class="button-primary-outline"><span>Загрузить</span></button>
         </div>
         <div class="form-group form-group__half_left">
@@ -136,7 +138,7 @@ export default class ProductForm {
 
 
   initialize() {
-    this.subElements.uploadImage.addEventListener('pointerdown', this.onUploadImage);
+    this.subElements.inputs.uploadImage.addEventListener('pointerdown', this.onUploadImage);
 
     this.element.addEventListener('submit', event => {
       event.preventDefault();
@@ -155,7 +157,8 @@ export default class ProductForm {
 
       if (file) {
         const formData = new FormData();
-        const { uploadImage, imageListContainer } = this.subElements;
+        const { imageListContainer } = this.subElements.elements;
+        const { uploadImage } = this.subElements.inputs;
 
         formData.append('image', file);
 
@@ -165,7 +168,7 @@ export default class ProductForm {
         const url = new URL("3/image", "https://api.imgur.com");
 
         fetchJson(url.href, {method: 'POST',
-          headers: {Authorization: `Client-ID ${IMGUR_CLIENT_ID}`}, body: formData})
+          headers: {Authorization: `Client-ID ${IMGUR_CLIENT_ID}`}, body: formData, referrer: ""})
           .then(result => {
             imageListContainer.append(this.getImageItem(result.data.link, file.name));
 
@@ -182,6 +185,24 @@ export default class ProductForm {
     fileInput.click();
   };
 
+  getImageItem (url, name) {
+    const wrapper = document.createElement('div');
+
+    wrapper.innerHTML = `
+      <li class="products-edit__imagelist-item sortable-list__item">
+        <span>
+          <img src="./icon-grab.svg" data-grab-handle alt="grab">
+          <img class="sortable-table__cell-img" alt="${name}" src="${url}">
+          <span>${name}</span>
+        </span>
+
+        <button type="button">
+          <img src="./icon-trash.svg" alt="delete" data-delete-handle>
+        </button>
+      </li>`;
+
+    return wrapper.firstElementChild;
+  }
 
   setMode() {
     if (this.productId) {
@@ -210,14 +231,23 @@ export default class ProductForm {
 
   //region update mode common functions
   insertDataProduct() {
-    this.subElements.title.value = this.dataProduct.title;
-    this.subElements.description.innerHTML = this.dataProduct.description;
-    this.setProductImages();
-    this.setProductProperty("subcategory");
-    this.subElements.price.value = this.dataProduct.price;
-    this.subElements.discount.value = this.dataProduct.discount;
-    this.subElements.quantity.value = this.dataProduct.quantity;
-    this.setProductProperty("status");
+    this.setProductProperty();
+
+  }
+
+  setProductProperty() {
+    const {inputs} = this.subElements;
+    const {uploadImage} = inputs;
+
+    for (const key in inputs) {
+
+      if (inputs[key] === uploadImage) {
+        this.setProductImages();
+        continue;
+      }
+      this.setInput(inputs[key], key);
+
+    }
   }
 
   setProductImages() {
@@ -243,26 +273,57 @@ export default class ProductForm {
       )
     });
 
-    const {sortableListContainer: container} = this.subElements;
-    container.insertBefore(list.element, container.lastElementChild);
-
-    this.subElements[list.element.dataset.element] = list.element;
+    const {imageListContainer} = this.subElements.elements;
+    imageListContainer.append(list.element);
   }
 
-  setProductProperty(property) {
-    const options = this.subElements[property].children;
-    [...options].map(option =>
+  setInput(item, key) {
+    const tagNames = {
+      input: "INPUT",
+      textarea: "TEXTAREA",
+      select: "SELECT"
+    };
 
-      option.getAttribute("value") !== ("" + this.dataProduct[property]) ?
+    switch (item.tagName) {
 
-        option.removeAttribute("selected") :
-        option.setAttribute('selected', ''));
+    case tagNames.input:
+      item.value = this.dataProduct[key];
+      break;
+
+    case tagNames.textarea:
+      item.innerHTML = this.dataProduct[key];
+      break;
+
+    case tagNames.select:
+      this.setFromListProperty(item, key);
+      break;
+    }
+  }
+
+  setFromListProperty(item, key) {
+
+    const options = item.children;
+
+    if (!options) {return;}
+    for (const option of options) {
+
+      if (option.value === ("" + this.dataProduct[key]))
+      {
+        option.setAttribute('selected', '');
+
+      } else {
+        option.removeAttribute("selected");
+      }
+    }
+
+
   }
   //endregion
 
   onCreateMode() {
     this.customEvent = new CustomEvent('product-saved', {detail: 'Данные сохранены'});
   }
+
 
   remove() {
     this.element.remove();
@@ -271,8 +332,6 @@ export default class ProductForm {
   destroy() {
     this.remove();
 
-
-    //TODO: нужно ли делать такую чистку в  конце?
     this.element = null;
     this.subElements = {};
     this.customEvent = null;

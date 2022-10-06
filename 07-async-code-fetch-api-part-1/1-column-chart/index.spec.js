@@ -33,7 +33,7 @@ describe('async-code-fetch-api-part-1/column-chart', () => {
     await columnChart.update(from, to);
     const data = columnChart.data;
 
-      expect(data).toEqual(ordersData);
+    expect(data).toEqual(ordersData);
   });
 
   it('should render loaded data correctly', async () => {
@@ -72,7 +72,7 @@ describe('async-code-fetch-api-part-1/column-chart', () => {
   it('should have property "chartHeight"', () => {
     columnChart = new ColumnChart();
 
-    expect(columnChart.chartHeight).toEqual(50);
+    expect(columnChart.CHART_HEIGHT).toEqual(50);
   });
 
   it('should have ability to be update by new values', async () => {

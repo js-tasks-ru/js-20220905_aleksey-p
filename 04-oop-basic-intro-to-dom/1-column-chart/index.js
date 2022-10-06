@@ -1,6 +1,7 @@
 export default class ColumnChart {
+
   element;
-  chartHeight = 50;
+  static CHART_HEIGHT = 50;
   subElements = {};
 
   constructor({
@@ -8,7 +9,7 @@ export default class ColumnChart {
     label = '',
     link = '',
     value = 0,
-    formatHeading = obj => `${obj}`} = {}) {
+    formatHeading = string => string} = {}) {
 
     this.data = data;
     this.label = label;
@@ -20,7 +21,7 @@ export default class ColumnChart {
 
   get template() {
     return `
-        <div class="column-chart column-chart_loading" style="--chart-height: ${this.chartHeight}">
+        <div class="column-chart column-chart_loading" style="--chart-height: ${ColumnChart.CHART_HEIGHT}">
           <div data-element="title" class="column-chart__title"></div>
           <div class="column-chart__container">
             <div data-element="header" class="column-chart__header"></div>
@@ -29,21 +30,27 @@ export default class ColumnChart {
         </div>`;
   }
 
-  getSubElements() {
-    const elements = this.element.querySelectorAll('[data-element]');
-    [...elements].map(item => this.subElements[item.dataset.element] = item);
+  getSubElements(element) {
+    const elements = element.querySelectorAll('[data-element]');
+
+    for (const element of elements) {
+      this.subElements[element.dataset.element] = element;
+    }
   }
 
   render() {
-    this.element = document.createElement('div');
-    this.element.innerHTML = this.template;
-    this.element = this.element.firstElementChild;
-    if (this.data.length) {this.element.classList.remove("column-chart_loading");}
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = this.template;
 
-    this.getSubElements();
+    if (this.data.length) {wrapper.firstElementChild.classList.remove("column-chart_loading");}
+
+    this.getSubElements(wrapper);
+
     this.setTitle();
     this.setHeader();
     this.setBody();
+
+    this.element = wrapper.firstElementChild;
   }
 
   update(data = []) {
@@ -52,11 +59,12 @@ export default class ColumnChart {
   }
 
   setTitle() {
-    let inner = `Total ${this.label}`;
-    if (this.link) {
-      inner += `<a class="column-chart__link" href="./${this.label}">View all</a>`;
-    }
-    this.subElements.title.innerHTML = inner;
+    const total = `Total ${this.label}`;
+    const link = this.link
+      ? `<a class="column-chart__link" href="./${this.label}">View all</a>`
+      : "";
+
+    this.subElements.title.innerHTML = `${total}${link}`;
   }
 
   setHeader() {
@@ -64,10 +72,13 @@ export default class ColumnChart {
   }
 
   setBody() {
+
     this.subElements.body.innerHTML = this.data.map(value => {
+
       const max = Math.max(...this.data);
       const calcValue = (value / max * 100).toFixed(0);
-      return `<div style="--value: ${Math.floor(calcValue * this.chartHeight * 0.01)}"
+
+      return `<div style="--value: ${Math.floor(calcValue * ColumnChart.CHART_HEIGHT * 0.01)}"
                             data-tooltip="${calcValue}%"></div>`;
     }).join("");
   }
@@ -80,5 +91,13 @@ export default class ColumnChart {
 
   destroy() {
     this.remove();
+
+    this.element = null;
+    this.subElements = {};
+
+    this.data = [];
+    this.label = '';
+    this.link = '';
+    this.value = 0;
   }
 }

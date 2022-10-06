@@ -1,12 +1,11 @@
 export default class SortableList {
 
-  // TODO: записал вопросы в TODO
-
   //region default
   element;
+  subElements = {};
+
   draggingItem;
   shifts = {};
-  subElements = {};
   itemPlaceholder;
 
   constructor({ items = [] } = {}) {
@@ -81,7 +80,8 @@ export default class SortableList {
   onPointerMove = event => {
     event.preventDefault();
 
-    this.subElements.currentElement.append(this.draggingItem);
+    const {currentElement} = this.subElements;
+    currentElement.append(this.draggingItem);
 
     this.setPosition(event);
     this.updatePlaceholder();
@@ -103,7 +103,7 @@ export default class SortableList {
   dragItem(listItem, event) {
     this.draggingItem = listItem;
 
-    this.setDraggingClass();
+    this.setDraggingProperties();
     this.setPosition(event);
 
     this.subElements.list.insertBefore(this.itemPlaceholder, this.draggingItem);
@@ -113,19 +113,19 @@ export default class SortableList {
   }
 
   //region dragItem common functions
-  setDraggingClass() {
+  setDraggingProperties() {
     this.draggingItem.style.width = this.draggingItem.offsetWidth + 'px';
     this.draggingItem.style.height = this.draggingItem.offsetHeight + 'px';
     this.draggingItem.classList.add('sortable-list__item_dragging');
   }
+  //endregion
 
   setShifts({clientX, clientY}) {
     this.shifts = {
-      x: clientX - this.draggingItem.getBoundingClientRect().x,
-      y: clientY - this.draggingItem.getBoundingClientRect().y
+      x: Math.abs(clientX - this.draggingItem.getBoundingClientRect().x),
+      y: Math.abs(clientY - this.draggingItem.getBoundingClientRect().y)
     };
   }
-  //endregion
 
   //endregion
 
@@ -158,14 +158,11 @@ export default class SortableList {
 
   setPosition({clientX, clientY}) {
 
-    //TODO: не пойму причину проблемы - если вместо 20 и 30 поставить шифты,
-    // которые в данный момент равны 20 и 30, то они станут -20 и -30. Ошибка возникает в productFormv2
-    console.log(this.shifts.y);
+    const {x: shiftX, y: shiftY} = this.shifts;
     this.draggingItem.style.position = "fixed";
-    this.draggingItem.style.left = clientX - 20 + 'px';
-    this.draggingItem.style.top = clientY - 30 + 'px';
+    this.draggingItem.style.left = clientX - shiftX + 'px';
+    this.draggingItem.style.top = clientY - shiftY + 'px';
   }
-
 
   remove() {
     this.element.remove();

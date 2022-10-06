@@ -2,6 +2,7 @@ class Tooltip {
   static #onlyInstance = null;
   element;
   target;
+
   constructor() {
     if (!Tooltip.#onlyInstance) {
       Tooltip.#onlyInstance = this;
@@ -15,8 +16,10 @@ class Tooltip {
     const x = event.clientX;
     const y = event.clientY;
 
-    this.element.style.left = (x + 10) + 'px';
-    this.element.style.top = (y + 10) + 'px';
+    const range = 5;
+
+    this.element.style.left = (x + range) + 'px';
+    this.element.style.top = (y + range) + 'px';
   }
 
   showTooltip = event => {

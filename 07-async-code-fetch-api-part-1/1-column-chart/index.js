@@ -1,9 +1,11 @@
-// import fetchJson from './utils/fetch-json.js';
+import fetchJson from './utils/fetch-json.js';
 
 const BACKEND_URL = 'https://course-js.javascript.ru';
 export default class ColumnChart {
+
+  //region default
   element;
-  chartHeight = 50;
+  static CHART_HEIGHT = 50;
   subElements = {};
   data = {};
   value = 0;
@@ -13,7 +15,7 @@ export default class ColumnChart {
     range = {from: new Date(), to: new Date()},
     label = '',
     link = '',
-    formatHeading = obj => `${obj}`} = {}) {
+    formatHeading = obj => obj} = {}) {
 
     this.url = url;
     this.range = range;
@@ -26,7 +28,7 @@ export default class ColumnChart {
 
   get template() {
     return `
-        <div class="column-chart column-chart_loading" style="--chart-height: ${this.chartHeight}">
+        <div class="column-chart column-chart_loading" style="--chart-height: ${ColumnChart.CHART_HEIGHT}">
           <div data-element="title" class="column-chart__title"></div>
           <div class="column-chart__container">
             <div data-element="header" class="column-chart__header"></div>
@@ -35,58 +37,11 @@ export default class ColumnChart {
         </div>`;
   }
 
-  getSubElements() {
-    const elements = this.element.querySelectorAll('[data-element]');
-    for (let item of elements) {
+  getSubElements(wrapper) {
+    const elements = wrapper.querySelectorAll('[data-element]');
+    for (const item of elements) {
       this.subElements[item.dataset.element] = item;
     }
-  }
-
-  render() {
-    this.element = document.createElement('div');
-    this.element.innerHTML = this.template;
-    this.element = this.element.firstElementChild;
-    if (Object.keys(this.data).length) {this.element.classList.remove("column-chart_loading");}
-
-    this.getSubElements();
-    this.setTitle();
-    this.update();
-  }
-
-  async update(start = this.range.from, end = this.range.to) {
-
-    const fromString = start.toISOString().split('T')[0];
-    const toString = end.toISOString().split('T')[0];
-    this.element.classList.add('column-chart_loading');
-
-    try {
-      await this.getData(fromString, toString);
-
-      if (Object.keys(this.data)) {
-        this.element.classList.remove('column-chart_loading');
-        this.setValue();
-        this.setHeader();
-        this.setBody();
-      }
-
-    } catch (e) {
-      throw new Error(e);
-    }
-  }
-
-  async getData(from = '', to = '') {
-    try {
-      const response = await fetch(`${BACKEND_URL}/${this.url}?from=${from}&to=${to}`);
-      this.data = await response.json();
-
-    } catch (e) {
-      throw new Error(e);
-    }
-  }
-
-  setValue() {
-    const sum = Object.values(this.data).reduce((a, b) => a + b);
-    this.value = this.formatHeading(new Intl.NumberFormat("en-US").format(sum));
   }
 
   setTitle() {
@@ -95,21 +50,90 @@ export default class ColumnChart {
 
     this.subElements.title.innerHTML = `${label}${link}`;
   }
+  //endregion
 
+  render() {
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = this.template;
+
+    this.getSubElements(wrapper);
+    this.setTitle();
+
+    this.element = wrapper.firstElementChild;
+    this.update(this.range.from, this.range.to);
+
+  }
+
+  update(start, end) {
+
+    this.element.classList.add('column-chart_loading');
+
+    const url = ColumnChart.getURL(this.url, start, end);
+    fetchJson(url)
+      .then(data => {
+
+        this.data = data;
+        this.setInner();
+      })
+      .catch(e => new Error(e));
+
+
+  }
+
+  //region update common
+  static getURL(path, start, end) {
+
+    function getStringDate(date) {
+      return date.toISOString().split('T')[0];
+    }
+
+    const fromString = getStringDate(start);
+    const toString = getStringDate(end);
+
+    const url = new URL(path, BACKEND_URL);
+    url.searchParams.append("from", fromString);
+    url.searchParams.append("to", toString);
+
+    return url;
+  }
+
+  setInner() {
+
+    if (Object.keys(this.data).length) {
+      this.element.classList.remove("column-chart_loading");
+
+      this.setHeader();
+      this.setBody();
+    }
+  }
+
+  //region setInner common
   setHeader() {
-    this.subElements.header.innerHTML = this.value;
+    const {header} = this.subElements;
+
+    const sum = Object.values(this.data).reduce((a, b) => a + b);
+    this.value = this.formatHeading(new Intl.NumberFormat("en-US").format(sum));
+
+
+    header.innerHTML = this.value;
   }
 
   setBody() {
+    const {body} = this.subElements;
     const values = Object.values(this.data);
 
-    this.subElements.body.innerHTML = values.map(value => {
-      const max = Math.max(...values);
-      const calcValue = (value / max * 100).toFixed(0);
-      return `<div style="--value: ${Math.floor(calcValue * this.chartHeight * 0.01)}"
-                            data-tooltip="${calcValue}%"></div>`;
+    body.innerHTML = values.map(value => {
+
+      const max = Math.max(... values);
+      const valuePercent = (value / max * 100).toFixed(0);
+      const fixedValue = Math.floor(valuePercent * ColumnChart.CHART_HEIGHT * 0.01);
+
+      return `<div style="--value: ${fixedValue}" data-tooltip="${valuePercent}%"></div>`;
     }).join("");
   }
+  //endregion
+  //endregion
 
   remove() {
     if (this.element) {
@@ -119,6 +143,16 @@ export default class ColumnChart {
 
   destroy() {
     this.remove();
+
+    this.element = null;
+    this.subElements = {};
+    this.data = {};
+    this.value = 0;
+
+    this.url = '';
+    this.range = {from: new Date(), to: new Date()};
+    this.label = '';
+    this.link = '';
   }
 }
 
